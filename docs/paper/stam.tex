@@ -106,16 +106,16 @@ upon which one can build.
 
 In the same spirit, the software we built for STAM caters towards an audience
 of developers and technically-skilled researchers. We deliver fairly low-level
-programming libraries and command-line tools that serve as dependencies for
+programming libraries and command-line tools that may serve as dependencies for
 higher-level applications. 
 
 Last but not least, it prevents misunderstanding to make clear what STAM is
 \emph{not}: STAM is \emph{not} a graphical user interface for annotation, it is
 \emph{not} a natural language processing tool for producing annotations, and it
 is \emph{not} a specific vocabulary for any particular class of annotation. It
-is also \emph{not} intended as a replacement for existing dedicated annotation
-formats, but more of a complement to those to allow further computation and
-processing.
+may be a foundation for any of those things though. It is also \emph{not}
+intended as a replacement for existing dedicated annotation formats, but more
+of a complement to those to allow further computation and processing.
 
 \textcolor{blue}{An overview of the software, how it was produced, and the
 research for which it has been used, including references to relevant research
@@ -251,17 +251,36 @@ criteria and considerations were:
 
 \begin{itemize}
     \item The library must be performant and reliable, we therefore chose to implement it in Rust, as that compiles to native code with memory-safety guarantees.
-    \item Our main aim is to be able to efficiently compute on annotations, we therefore opted for an implementation that is largely memory-based.
+    \item Our main aim is to be able to efficiently search and compute on annotations, we therefore opted for an implementation that is largely memory-based.
     \item The library must not rely on any further service infrastructure but be fairly standalone and fully usable also on a local non-networked machine. It therefore does not rely on things like a database server.
     \item To make it accessible for higher-level developers and technically-skilled researchers and data scientists, we implement a Python binding on top of the Rust library. This combines the best of both worlds.
     \item Moreover, we also provide command-line tools. These also add functionality that is not in the main library, but defined in the STAM extensions.
     \item Everything that is formulated as an extension and still implemented in the main Rust library can be disabled at compile time.
 \end{itemize}
 
-The typical workflow is to load a STAM annotationstore from disk into memory, operate on
-the annotations, and serialize the data to disk again if any changes were made.
+The typical workflow is to load a STAM annotation store from disk (e.g. from
+STAM JSON) into memory, operate on the annotations, and serialize the data to
+disk again if any changes were made.
 
-%TODO: scalability
+Our approach can be contrasted to implementations that would store the data in
+a relational database, or any other kind of database engine, and load into
+memory only parts when needed. This too would be a feasible way of implementing
+STAM. It would, however, be subject to greater latency. There is a trade-off
+between low-latency and high-scalability. Our current implementation
+deliberately tends towards the former rather than the latter. Our
+implementation is also sufficiently optimised to allow working with millions of
+annotations without running into memory issues.
+
+Internally, various reverse indices are built to facilitate data retrieval.
+
+%Conceptually, a STAM model can be conceived of as an acyclic directed graph, in
+%which the annotations, annotation data, data keys, data values and text
+%resources are all nodes and the links between them edges. This is also strongly
+%reflected in the memory ownership model of the Rust implementation.
+
+
+
+%TODO: documentation
 
 
 \textcolor{blue}{How the software was implemented, with details of the
@@ -295,13 +314,14 @@ running the software with sample input and output data). }
 \section*{Operating system}
 
 The stam library for Rust compiles on all 64-bit architectures where a Rust compiler (version 1.56 or later, edition 2021) is available.
+A simple \texttt{cargo add stam} suffices to add it to your own Rust project.
 
 For the Python binding, Python wheel packages are provided via the Python Package Index for Linux (x86_64/arm64, glibc/musl), macOS (x86_64/arm64) and Windows (x86_64).
 A simple \texttt{pip install stam} suffices in most cases.
 
 \section*{Programming language}
 
-A rust installation is not needed if you use the Python binding or the command-line tools and if it is packaged for your distribution.
+A Rust installation is not needed if you use the Python binding or the command-line tools and if it is packaged for your distribution.
 
 The Python binding requires Python 3.7 or later. 
 
@@ -319,7 +339,9 @@ The command-line tools work best with a POSIX-compliant unix shell like bash or 
 
 \section*{Dependencies}
 
-None aside from compile-time dependencies for the Rust library/tools, Python for the Python binding, a shell for the command line tools, and a supported libc version.
+None aside from compile-time dependencies for the Rust library/tools, all binaries are statically linked.
+
+Python for the Python binding, a shell for the command line tools, and a supported libc version.
 
 \section*{List of contributors}
 
